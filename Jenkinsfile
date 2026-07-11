@@ -2,7 +2,8 @@ pipeline {
     agent any
     
     environment {
-        APP_PORT     = "${BRANCH_NAME == 'main' ? '3000' : '3001'}"
+        // Оскільки це гілка dev, жорстко прописуємо її порт
+        APP_PORT = '3001'
     }
     
     stages {
@@ -14,7 +15,7 @@ pipeline {
         
         stage('Build') {
             steps {
-                echo "Збірка додатку для гілки: ${BRANCH_NAME}..."
+                echo "Збірка додатку для dev гілки..."
                 bat 'npm install'
             }
         }
@@ -29,8 +30,9 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Розгортання додатку на порт ${APP_PORT}..."
+                // Закриваємо старий процес на цьому порту, якщо він завис, і запускаємо заново
                 bat """
-                    for /f "tokens=5" %%a in ('netstat -aon ^| findstr :${APP_PORT}') do taskkill /f /pid %%a 2>nul || devnull
+                    for /f "tokens=5" %%a in ('netstat -aon ^| findstr :${APP_PORT}') do taskkill /f /pid %%a 2>nul || set errorlevel=0
                     start /b npm start -- --port=${APP_PORT}
                 """
             }
